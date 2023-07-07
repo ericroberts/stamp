@@ -1,11 +1,14 @@
 from dataclasses import dataclass
 from types import GenericAlias, UnionType
-from typing import TypedDict
+from typing import TypeVar, TypedDict, Callable, cast
 
 
 @dataclass(frozen=True)
 class NotPresent:
     pass
+
+
+T = TypeVar("T", bound=TypedDict)
 
 
 class Stamp:
@@ -15,6 +18,17 @@ class Stamp:
             is_match(t, actual_dict.get(key, NotPresent()))
             for key, t in dict_type.__annotations__.items()
         )
+
+    @staticmethod
+    def cast(
+        dict_type: type[T],
+        actual_dict: dict[object, object],
+        on_mismatch: Callable[[], object] = lambda: None,
+    ) -> T:
+        if not Stamp.is_match(dict_type, actual_dict):
+            on_mismatch()
+
+        return cast(T, actual_dict)
 
 
 def is_match(t: type[object], value: object):

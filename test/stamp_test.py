@@ -2,6 +2,7 @@ import json
 from typing import TypedDict
 from typing_extensions import NotRequired
 from unittest import TestCase
+from unittest.mock import Mock
 from stamp import Stamp
 
 
@@ -29,6 +30,16 @@ class BaseTest(TestCase):
                 actual_dict,
             ),
         )
+
+
+class TestCast(TestCase):
+    def test_runs_on_mismatch_when_theres_a_mismatch(self):
+        class T(TypedDict):
+            string: str
+
+        on_mismatch = Mock()
+        Stamp.cast(T, {"string": 1}, on_mismatch)
+        on_mismatch.assert_called()
 
 
 class SimpleTest(BaseTest):
