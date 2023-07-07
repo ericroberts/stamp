@@ -1,71 +1,97 @@
+import json
 from typing import TypedDict
-import unittest
+from unittest import TestCase
 from stamp import Stamp
 
 
-class SimpleTest(unittest.TestCase):
-    class TestDict(TypedDict):
+def annotations_as_string(annotations: dict[str, object]):
+    types = ("\n").join(f"    {key}: {t}" for key, t in annotations.items())
+    return f"{{\n{types}\n}}"
+
+
+def failure_message(
+    msg: str, dict_type: type[TypedDict], actual_dict: dict[object, object]
+):
+    return (
+        f"\n\nProvided dict:\n\n{json.dumps(actual_dict, indent=4, sort_keys=True)}\n\n"
+        f"{msg} {dict_type.__name__}:\n\n"
+        f"{annotations_as_string(dict_type.__annotations__)}",
+    )
+
+
+class BaseTest(TestCase):
+    def assertMatch(
+        self, dict_type: type[TypedDict], actual_dict: dict[object, object]
+    ):
+        self.assertTrue(
+            Stamp.is_match(dict_type, actual_dict),
+            failure_message(
+                f"does not match type {dict_type.__name__}",
+                dict_type,
+                actual_dict,
+            ),
+        )
+
+    def assertNoMatch(
+        self, dict_type: type[TypedDict], actual_dict: dict[object, object]
+    ):
+        self.assertFalse(
+            Stamp.is_match(dict_type, actual_dict),
+            failure_message(
+                f"unexpectedly matches type {dict_type.__name__}",
+                dict_type,
+                actual_dict,
+            ),
+        )
+
+
+class SimpleTest(BaseTest):
+    class Simple(TypedDict):
         string: str
         integer: int
 
     def test_matching(self):
-        self.assertMatch(self.TestDict, { "string": "hi", "integer": 1})
+        self.assertMatch(self.Simple, {"string": "hi", "integer": 1})
 
-    def test_non_matching_type(self):
-        self.assertNoMatch(self.TestDict, {"string": "hi", "integer": "not an integer"})
+    def test_non_matching(self):
+        self.assertNoMatch(self.Simple, {"string": "hi", "integer": "not an integer"})
 
     def test_missing_keys(self):
-        self.assertNoMatch(self.TestDict, {"string": "hi"})
+        self.assertNoMatch(self.Simple, {"string": "hi"})
 
     def test_allows_extra_keys(self):
-        self.assertMatch(self.TestDict, { "string": "hi", "integer": 1, "extra_key": True })
+        self.assertMatch(self.Simple, {"string": "hi", "integer": 1, "extra_key": True})
 
-    def assertMatch(self, dict_type: type[TypedDict], actual_dict: dict[object, object]):
-        self.assertTrue(Stamp.is_match(dict_type, actual_dict))
 
-    def assertNoMatch(self, dict_type: type[TypedDict], actual_dict: dict[object, object]):
-        self.assertFalse(Stamp.is_match(dict_type, actual_dict))
+class UnionTest(BaseTest):
+    class Union(TypedDict):
+        str_or_int: str | int
 
-class StampTest(unittest.TestCase):
-    def test_union(self):
-        class Union(TypedDict):
-            str_or_int: str | int
+    def test_matching(self):
+        self.assertMatch(self.Union, {"str_or_int": "hi"})
+        self.assertMatch(self.Union, {"str_or_int": 1})
 
-        with self.subTest("matching"):
-            self.assertTrue(Stamp.is_match(Union, {"str_or_int": "hi"}))
-            self.assertTrue(Stamp.is_match(Union, {"str_or_int": 1}))
+    def test_non_matching(self):
+        self.assertNoMatch(self.Union, {"str_or_int": 0.2})
 
-        with self.subTest("non-matching"):
-            self.assertFalse(Stamp.is_match(Union, {"str_or_int": 0.2}))
 
-    def test_nested_list(self):
-        class NestedList(TypedDict):
-            string: str
-            list_of_strings: list[str]
+class NestedListTest(BaseTest):
+    class NestedList(TypedDict):
+        list_of_strings: list[str]
 
-        with self.subTest("matching"):
-            self.assertTrue(
-                Stamp.is_match(NestedList, {"string": "hi", "list_of_strings": ["hi"]})
-            )
+    def test_matching(self):
+        self.assertMatch(self.NestedList, {"list_of_strings": ["hi"]})
 
-        with self.subTest("non-matching"):
-            self.assertFalse(
-                Stamp.is_match(NestedList, {"string": "hi", "list_of_strings": [1]})
-            )
+    def test_non_matching(self):
+        self.assertNoMatch(self.NestedList, {"list_of_strings": [1]})
 
-    def test_nested_list_union(self):
-        class NestedList(TypedDict):
-            string: str
-            list_of_strings: list[str | int]
 
-        with self.subTest("matching"):
-            self.assertTrue(
-                Stamp.is_match(
-                    NestedList, {"string": "hi", "list_of_strings": ["hi", 1]}
-                )
-            )
+class NestedListWithUnionTest(BaseTest):
+    class NestedList(TypedDict):
+        list_of_stuff: list[str | int]
 
-        with self.subTest("non-matching"):
-            self.assertFalse(
-                Stamp.is_match(NestedList, {"string": "hi", "list_of_strings": [1.01]})
-            )
+    def test_matching(self):
+        self.assertMatch(self.NestedList, {"list_of_stuff": ["hi", 1]})
+
+    def test_non_matching(self):
+        self.assertNoMatch(self.NestedList, {"string": "hi", "list_of_strings": [1.01]})
