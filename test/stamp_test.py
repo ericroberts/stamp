@@ -4,21 +4,6 @@ from unittest import TestCase
 from stamp import Stamp
 
 
-def annotations_as_string(annotations: dict[str, object]):
-    types = ("\n").join(f"    {key}: {t}" for key, t in annotations.items())
-    return f"{{\n{types}\n}}"
-
-
-def failure_message(
-    msg: str, dict_type: type[TypedDict], actual_dict: dict[object, object]
-):
-    return (
-        f"\n\nProvided dict:\n\n{json.dumps(actual_dict, indent=4, sort_keys=True)}\n\n"
-        f"{msg} {dict_type.__name__}:\n\n"
-        f"{annotations_as_string(dict_type.__annotations__)}",
-    )
-
-
 class BaseTest(TestCase):
     def assertMatch(
         self, dict_type: type[TypedDict], actual_dict: dict[object, object]
@@ -95,3 +80,18 @@ class NestedListWithUnionTest(BaseTest):
 
     def test_non_matching(self):
         self.assertNoMatch(self.NestedList, {"string": "hi", "list_of_strings": [1.01]})
+
+
+def annotations_as_string(annotations: dict[str, object]):
+    types = ("\n").join(f"    {key}: {t}" for key, t in annotations.items())
+    return f"{{\n{types}\n}}"
+
+
+def failure_message(
+    msg: str, dict_type: type[TypedDict], actual_dict: dict[object, object]
+):
+    return (
+        f"\n\nProvided dict:\n\n{json.dumps(actual_dict, indent=4, sort_keys=True)}\n\n"
+        f"{msg} {dict_type.__name__}:\n\n"
+        f"{annotations_as_string(dict_type.__annotations__)}",
+    )
