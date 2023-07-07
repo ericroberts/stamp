@@ -13,6 +13,7 @@ pytest-watch = "^4.2.0"
 black = "^23.3.0"
 pyright = "^1.1.310"
 ruff = "^0.0.277"
+typing-extensions = "^4.7.1"
 
 
 [build-system]

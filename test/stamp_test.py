@@ -1,5 +1,6 @@
 import json
 from typing import TypedDict
+from typing_extensions import NotRequired
 from unittest import TestCase
 from stamp import Stamp
 
@@ -60,6 +61,19 @@ class UnionTest(BaseTest):
         self.assertNoMatch(self.Union, {"str_or_int": 0.2})
 
 
+class NotRequiredTest(BaseTest):
+    class NotRequired(TypedDict):
+        string: NotRequired[str]
+
+    def test_matching(self):
+        self.assertMatch(self.NotRequired, {})
+        self.assertMatch(self.NotRequired, {"string": "hi"})
+
+    def test_non_matching(self):
+        self.assertNoMatch(self.NotRequired, {"string": 1})
+        self.assertNoMatch(self.NotRequired, {"string": None})
+
+
 class NestedListTest(BaseTest):
     class NestedList(TypedDict):
         list_of_strings: list[str]
@@ -93,5 +107,5 @@ def failure_message(
     return (
         f"\n\nProvided dict:\n\n{json.dumps(actual_dict, indent=4, sort_keys=True)}\n\n"
         f"{msg} {dict_type.__name__}:\n\n"
-        f"{annotations_as_string(dict_type.__annotations__)}",
+        f"{annotations_as_string(dict_type.__annotations__)}"
     )
