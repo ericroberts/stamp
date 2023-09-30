@@ -123,6 +123,20 @@ class NestedTypedDictTest(BaseTest):
         self.assertNoMatch(ParentTypedDict, {"nested_typed_dict": {"key": 1}})
 
 
+class NestedDictTest(BaseTest):
+    class NestedDict(TypedDict):
+        nested_dict: dict[str, int]
+
+    def test_matching(self):
+        self.assertMatch(self.NestedDict, {"nested_dict": {"key": 1}})
+
+    def test_non_matching_key(self):
+        self.assertNoMatch(self.NestedDict, {"nested_dict": {1: 2}})
+
+    def test_non_matching_value(self):
+        self.assertNoMatch(self.NestedDict, {"nested_dict": {"key": "hi"}})
+
+
 def annotations_as_string(annotations: dict[str, object]):
     types = ("\n").join(f"    {key}: {t}" for key, t in annotations.items())
     return f"{{\n{types}\n}}"

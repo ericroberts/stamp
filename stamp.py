@@ -38,6 +38,12 @@ def is_match(t: type[object], value: object) -> bool:
     if type(t) == GenericAlias and isinstance(value, list):
         return all(is_match(t.__args__[0], v) for v in value)
 
+    if type(t) == GenericAlias and isinstance(value, dict):
+        return all(
+            is_match(t.__args__[0], k) and is_match(t.__args__[1], v)
+            for k, v in value.items()
+        )
+
     if type(t) == UnionType:
         return any(is_match(arg_type, value) for arg_type in t.__args__)
 
