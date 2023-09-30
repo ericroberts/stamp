@@ -107,6 +107,22 @@ class NestedListWithUnionTest(BaseTest):
         self.assertNoMatch(self.NestedList, {"string": "hi", "list_of_strings": [1.01]})
 
 
+class NestedTypedDict(TypedDict):
+    key: str
+
+
+class ParentTypedDict(TypedDict):
+    nested_typed_dict: NestedTypedDict
+
+
+class NestedTypedDictTest(BaseTest):
+    def test_matching(self):
+        self.assertMatch(ParentTypedDict, {"nested_typed_dict": {"key": "hi"}})
+
+    def test_non_matching(self):
+        self.assertNoMatch(ParentTypedDict, {"nested_typed_dict": {"key": 1}})
+
+
 def annotations_as_string(annotations: dict[str, object]):
     types = ("\n").join(f"    {key}: {t}" for key, t in annotations.items())
     return f"{{\n{types}\n}}"
