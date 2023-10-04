@@ -13,16 +13,12 @@ T = TypeVar("T", bound=TypedDict)
 
 class Stamp:
     @staticmethod
-    def is_match(dict_type: type[TypedDict], actual_dict: dict[object, object]) -> bool:
-        return is_match(dict_type, actual_dict)
-
-    @staticmethod
     def cast(
         dict_type: type[T],
         actual_dict: dict[object, object],
         on_mismatch: Callable[[], object] = lambda: None,
     ) -> T:
-        if not Stamp.is_match(dict_type, actual_dict):
+        if not is_match(dict_type, actual_dict):
             on_mismatch()
 
         return cast(T, actual_dict)
